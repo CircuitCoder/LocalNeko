@@ -1,0 +1,242 @@
+\documentclass[UTF-8]{ctexbeamer}
+\usetheme{Berkeley}
+
+\usepackage{multimedia}
+\usepackage{listings}
+\usepackage{minted}
+
+\title{How NOT to Rust}
+
+\author{喵喵}
+\date{2021.10}
+
+\begin{document}
+\begin{frame}
+  \titlepage
+  \begin{center}
+    \includegraphics[width=.1\textwidth]{assets/float.png}
+  \end{center}
+\end{frame}
+
+\section{Intro}
+
+\begin{frame}
+  \frametitle{How NOT to Rust}
+
+  本来想用的标题是 \texttt{A Brief, Incomplete, and Mostly Wrong History of Rust}\footnote{\url{http://james-iry.blogspot.com/2009/05/brief-incomplete-and-mostly-wrong.html}}。
+
+  \pause
+  \vspace{1em}
+
+  但是喵喵写 Slide 毫无灵感\dots
+
+  \begin{figure}
+    \includegraphics<2>[width=0.25\textwidth]{assets/avatar.jpg}
+    \includegraphics<3>[width=0.5\textwidth]{assets/avatarWD40.png}
+    \only<2>{\caption{呼呼喵喵}}
+    \only<3>{\caption{精神喵喵！！}}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{How NOT to Rust}
+
+  来聊聊 Rust 的历史。
+
+  \pause
+
+  这个 Talk 包括：
+  \begin{itemize}
+    \item Rust 简易入门！
+    \item Rust 的各种 Joke
+  \end{itemize}
+
+  这个 Talk 不包括：
+  \begin{itemize}
+    \item Rust 详细入门，请查看 The Rust Programming Language
+    \item Rust 详细语义，请查看 The Rust Language Reference
+    \item 讲者存在 Rust 深刻知识的任何可能。
+  \end{itemize}
+
+  \pause
+
+  喵喵刚刚入门 Rust，请爱护喵喵！
+\end{frame}
+
+\section{The Uglies}
+
+\begin{frame}
+  \frametitle{快速 Rust 入门}
+
+  Rust 和 \texttt{C(|++), Java(|Script), Python, LISP, \dots} 有什么不同？
+
+  \pause
+  \vspace{1em}
+
+  \begin{itemize}
+    \item Algebraic Data Types
+    \item \texttt{crate} and \texttt{module}
+    \item Polymorphism: Generic + Trait
+    \item (The dreaded) Lifetime / \texttt{borrowck}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{ADT: Algebraic Data Types}
+
+  \begin{minted}{rust}
+// KV DB, Client -> Server conn payload
+enum KVPayload {
+  Close,
+  Get(String),
+  Put {
+    key: String,
+    value: String,
+    expire: Datetime,
+  },
+}
+  \end{minted}
+
+  \pause
+  \vspace{1em}
+  Disjoint sum over products!
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Module-level encapsulation}
+
+  Crate = Node/Go/Python package (sort of)
+
+  功能集合，例如：\texttt{serde} 提供了序列化、反序列化相关的基础设施。
+
+  \pause
+  \vspace{1em}
+
+  Module = Java package (sort of)
+
+  实现单元，“可见性“的边界。例如：\texttt{serde::ser} 包含序列化 (Serialize) 相关的声明和实现。
+
+  \pause
+  \vspace{1em}
+
+  \begin{minted}{rust}
+mod data;
+pub use data::{Input, Output};
+  \end{minted}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Abusing modules}
+
+  \texttt{library/std/src/os/mod.rs:}
+
+  \begin{minted}[breaklines]{rust}
+// unix
+#[cfg(not(all(
+    doc,
+    any(
+        all(target_arch = "wasm32", not(target_os = "wasi")),
+        all(target_vendor = "fortanix", target_env = "sgx")
+    )
+)))]
+#[cfg(target_os = "hermit")]
+#[path = "hermit/mod.rs"]
+pub mod unix;
+  \end{minted}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Polymorphism}
+
+  \begin{itemize}
+    \item Composition over Inheritance {\tiny{设计模式!}}
+    \item Trait: 描述一个接口
+    \pause
+    \item Generic: 使用 Trait 的静态派发
+    \item Trait Objects: 使用 Trait 的动态派发
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Polymorphism, Cont.}
+  \begin{minted}{rust}
+trait Monoid {
+  // "Member functions"
+  fn product(&self, other: &Self) -> Self;
+  // "Static functions"
+  fn identity() -> Self;
+  fn is_commutative() -> bool;
+}
+
+trait Group: Monoid {
+  fn inverse(&self) -> Self;
+  // Default impl
+  fn is_abelian() -> bool {
+    return Self::is_commutative();
+  }
+}
+  \end{minted}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Polymorphism, Cont.}
+
+  \begin{minted}{rust}
+fn subgroup_by<G>(gen: G) -> Vec<G>
+  where G: Group + Eq + Clone
+{
+  let mut cur = gen.clone();
+  let mut result = Vec::new();
+  loop {
+    result.push(cur.clone());
+    cur = cur.product(gen);
+    if cur == gen {
+      return result;
+    }
+  }
+}
+  \end{minted}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Polymorphism, Cont.}
+
+  \begin{minted}{rust}
+    let trait_obj: &dyn Group = &group;
+  \end{minted}
+
+  \pause
+  \vspace{1em}
+
+  VTable with fat pointer
+\end{frame}
+
+\begin{frame}
+  \frametitle{Borrow checker!}
+
+  核心目标：
+  \begin{itemize}
+    \item 读不了非法内存 (Uninitialized, Use after freed)
+    \item 比较难 Race (一段代码、一个线程在读，另外一段代码、一个线程在写）
+  \end{itemize}
+
+  \pause
+  \vspace{1em}
+
+  Lifetime!
+\end{frame}
+
+\begin{frame}
+  \frametitle{The uglies}
+\end{frame}
+
+\begin{frame}
+  \frametitle{That's All!}
+
+  \begin{center}
+    \includegraphics[width=.5\textwidth]{assets/look.png}
+
+    Question time!
+  \end{center}
+\end{frame}
+\end{document}
