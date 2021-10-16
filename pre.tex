@@ -100,6 +100,37 @@ enum KVPayload {
 \end{frame}
 
 \begin{frame}[fragile]
+  \frametitle{Generic over type}
+
+  \begin{minted}{rust}
+    enum SingleOrVec<T> {
+      Single(T),
+      Vec(Vec<T>),
+    }
+  \end{minted}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Generic over type...?}
+
+  Heap allocation are bad.
+
+  \pause
+
+  \begin{minted}{rust}
+    enum SingleOrArray<T, const N: usize> {
+      Single(T),
+      Array([T; N]),
+    }
+  \end{minted}
+
+  \pause
+  \vspace{1em}
+
+  Const generics (rfcs\#2000)
+\end{frame}
+
+\begin{frame}[fragile]
   \frametitle{Module-level encapsulation}
 
   Crate = Node/Go/Python package (sort of)
@@ -197,6 +228,28 @@ trait Group: Monoid {
   }
 }
   \end{minted}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Polymorphism, Cont.}
+
+  \begin{minted}{rust}
+struct Cyclic<const N: usize>(usize);
+
+impl<const N: usize> Monoid for Cyclic<N> {
+    fn product(&self, ano: &Self) -> Self {
+        let inner = self.0;
+        let anoinner = ano.0;
+        return Self((self.0 + ano.0) % N)
+    }
+    fn identity() -> Self { Self(0) }
+    fn is_commutative() -> bool { true }
+}
+    
+  \end{minted}
+
+  
+
 \end{frame}
 
 \begin{frame}[fragile]
@@ -475,7 +528,7 @@ let large = Box::new([0; 1000000]);
 
   \pause
   \vspace{1em}
-  Guaranteed RVO? Not yet.
+  Guaranteed Copy Elision? Not yet.
 \end{frame}
 
 \begin{frame}[fragile]
@@ -641,7 +694,8 @@ struct Evil<'a> {
   \begin{itemize}
     \item 为什么方法里允许 \texttt{self: Pin<Self>}
     \item 为什么现在 Rust 标准库里的 HashTable 实现，在查找-插入的时候需要线性扫描两次？
-    \item 为什么不能直接实现 Eq？
+    \item 为什么不能直接实现 Eq，必须得写一个 PartialEq？
+    \item \texttt{impl Trait} 出现返回值、参数和别名内的意义有啥不一样？
   \end{itemize}
 \end{frame}
 
