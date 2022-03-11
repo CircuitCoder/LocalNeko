@@ -26,6 +26,20 @@
 \end{frame}
 
 \begin{frame}
+  \frametitle{自我介绍}
+
+  \texttt{喵喵: 猫猫}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Previously...}
+
+  \includegraphics[width=\textwidth]{assets/scary.jpg}
+
+  \includegraphics[width=0.4\textwidth]{assets/gone.png}
+\end{frame}
+
+\begin{frame}
   \frametitle{Motivation}
 
   \pause
@@ -113,6 +127,18 @@
   \end{center}
 
   \pause
+
+  \vspace{1em}
+
+  $$
+  \neg A := A \rightarrow \bot
+  $$
+  $$
+  \bot \rightarrow B
+  $$
+
+  \pause
+
   \vspace{1em}
 
   \begin{center}
@@ -120,8 +146,50 @@
   \end{center}
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
   \frametitle{Curry-Howard 对应}
+
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      $$
+      A \rightarrow B
+      $$
+
+      \pause
+
+      \textbf{证明方法：} 在已知 A 的情况下，尝试证明 B。
+
+      \pause
+      \vspace{0.5em}
+
+      \textbf{使用方法：} 如果拿到了 A 的证明，那么就证出来了 B。
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \pause
+      \centering
+      \begin{minted}{rust}
+impl Fn(A) -> B
+      \end{minted}
+
+      \pause
+
+      \textbf{实现方法：} 在有 A 的情况下，尝试给出类型为 B 的东西。
+
+      \pause
+      \vspace{0.5em}
+
+      \textbf{使用方法：} 喂一个 A 类型的东西，吐出一个 B 类型的东西。
+    \end{column}
+  \end{columns}
+
+  \pause
+  \vspace{1em}
+
+  {
+    \begin{center}
+      \LARGE 直觉逻辑的证明和程序存在一一对应的关系
+    \end{center}
+  }
 \end{frame}
 
 \begin{frame}[fragile]
@@ -134,11 +202,16 @@ fn concat<A, B, C>(
   first: impl Fn(A) -> B,
   second: impl Fn(B) -> C
 ) -> impl Fn(A) -> C;
-
-fn and_to_or<A, B>(and: (A, B)) -> Either<A, B> {
-  Either::Left(and.0)
-}
   \end{minted}
+
+  \pause
+
+  $$
+  A \rightarrow A
+  $$
+  $$
+  (A \rightarrow B) \rightarrow (B \rightarrow C) \rightarrow (A \rightarrow C)
+  $$
 \end{frame}
 
 \begin{frame}[fragile]
@@ -151,15 +224,74 @@ fn concat<A, B, C>(
   first: A -> B,
   second: B -> C
 ) -> (A -> C);
+  \end{minted}
 
-fn and_to_or<A, B>(and: A × B) -> (A + B) {
-  Left(and.first)
+  $$
+  A \rightarrow A
+  $$
+  $$
+  (A \rightarrow B) \rightarrow (B \rightarrow C) \rightarrow (A \rightarrow C)
+  $$
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{$\land, \lor, \top, \bot$}
+
+  \pause
+  \begin{minted}{rust}
+(A, B)
+  \end{minted}
+
+  \pause
+  \begin{minted}{rust}
+// Case study = match
+enum Either<A, B> {
+  Left(A),
+  Right(B),
 }
+  \end{minted}
+
+  \pause
+  \begin{minted}{rust}
+struct Trivial; // Or ()
+  \end{minted}
+
+  \pause
+  \begin{minted}{rust}
+enum False {}; // Or !
   \end{minted}
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{We can prove stuff!}
+  \frametitle{We can prove (other) stuff}
+
+  \begin{minted}{rust}
+fn and_to_or<a, b>(and: (a, b)) -> Either<a, b> {
+  Either::left(and.0)
+}
+  \end{minted}
+
+  $$
+  a \land b \rightarrow a \lor b
+  $$
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{We can prove (other) stuff}
+
+  \begin{minted}{rust}
+fn and_to_or<A, B>(and: A × B) -> (A + B) {
+  Left(and.first)
+}
+  \end{minted}
+
+  $$
+  a \land b \rightarrow a \lor b
+  $$
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{We can prove (other) stuff!}
 
   \begin{block}{LEM Irrefutable}
   $$
@@ -268,36 +400,59 @@ fn lem_irrefutable<P>(
   \texttt{Data -> Type}: Dependent Typing
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
   \frametitle{Dependent Typing}
+
+  允许:
+  \begin{itemize}
+    \pause
+    \item Dependent Function: \texttt{(a: A) -> P(a)}
+    \pause
+    \item Dependent Pair: \texttt{(a: A) × P(a)}
+  \end{itemize}
+
+  \pause
+  \vspace{1em}
+
+  \begin{minted}{rust}
+    let dep_fun: (a: A) -> P(a);
+    dep_fun(some_a): P(some_a);
+
+    let dep_pair: (a: A) × P(a);
+    dep_pair.second: P(dep_pair.first);
+  \end{minted}
+
+  \pause
+  \vspace{1em}
+
+  量词：$\forall, \exists$
+
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{类型表示}
 
   \begin{minted}{rust}
-    fn id<A>(a: A) -> A;
+fn id<A>(a: A) -> A;
   \end{minted}
 
   \pause
+  $\Downarrow$
 
-  \begin{center}
-    \texttt{id<A>: A -> A}
-
-    \pause
-    \vspace{1em}
-
-    \texttt{id: (A: Type) -> A -> A}
-  \end{center}
-\end{frame}
-
-\begin{frame}
-  \frametitle{量词}
+  \texttt{id<A>: A -> A}
 
   \pause
-  $$
-  \forall, \exists
-  $$
+
+  $\Downarrow$
+
+  \texttt{id: (A: Type) -> A -> A}
+
+  \pause
+  $\Downarrow$
+
+  \begin{minted}{rust}
+fn id(A: Type, a: A) -> A;
+  \end{minted}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -340,27 +495,252 @@ fn not_exactly_choice(
 \end{frame}
 
 \begin{frame}
-  \frametitle{Equality}
+  \frametitle{相等}
+
+  \pause
+  \begin{figure}
+    \includegraphics[width=0.5\textwidth]{assets/same.png}
+    \caption{\texttt{m ==(T) n}}
+  \end{figure}
 \end{frame}
 
 \begin{frame}
-  \frametitle{What is \texttt{Type}}
+  \frametitle{相等}
+
+  $$
+  \forall n: Nat, \forall m: Nat, (n \equiv m) \rightarrow (2n \equiv 2m)
+  $$
+
+  \pause
+
+  \texttt{(n: Nat) -> (m: Nat)}
+
+  \texttt{    -> (n ==(Nat) m)}
+
+  \texttt{    -> (double(n) ==(Nat) double(m))}
+\end{frame}
+
+\begin{frame}
+  \frametitle{相等的行为}
+
+  \begin{center}
+    \texttt{==(\_): (T: Type) -> (lhs: T) -> (rhs: T) -> Type}
+  \end{center}
+
+  \pause
+  \begin{itemize}
+    \item 自反性
+    
+    \texttt{refl: (T: Type) -> (x: T) -> (x ==(T) x)}
+
+    \pause
+    \item 类型转换
+    
+    \texttt{cast: (T: Type) -> (U: Type) -> (T ==(Type) U) -> T -> U}
+
+    \pause
+    \item 映射后不变
+    
+    \texttt{ap: (f: T -> U) -> (a ==(T) b) -> (f(a) ==(U) f(b))}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{对称性 / 传递性在哪里？}
+
+  \pause
+
+  \begin{minted}{rust}
+fn eq_sym(
+  T: Type,
+  a: T, b: T,
+  eq: a ==(T) b,
+) -> b ==(T) a {
+  \end{minted}
+  \pause
+  \begin{minted}{rust}
+  let start: (a ==(T) a) = refl(T, a);
+  \end{minted}
+  \pause
+  \begin{minted}{rust}
+  let ty_eq: (a ==(T) a) ==(Type) (b ==(T) a)
+    = ap(|x: T| { x ==(T) a}, eq);
+  \end{minted}
+  \pause
+  \begin{minted}{rust}
+  cast(/* ... */, ty_eq, start)
+}
+  \end{minted}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{We can prove (even more) stuff}
+
+  \begin{minted}{rust}
+enum C3 {
+  Zero, One, Two,
+}
+// Define mul: C3 -> C3 -> C3
+
+fn C3_order_3(
+  input: C3
+) -> mul(mul(input, input), input) ==(C3) C3::Zero;
+  \end{minted}
+  
+
 \end{frame}
 
 \section{归纳}
+
+\begin{frame}[fragile]
+  \frametitle{归纳定义 / 证明}
+
+  \pause
+
+  回忆自然数的定义：
+  \begin{itemize}
+    \item 0 是自然数。
+    \item 如果 $n$ 是自然数，那么 $n$ 的后继是自然数。
+  \end{itemize}
+
+  \pause
+
+  \begin{minted}{rust}
+enum Nat {
+  Zero,
+  Succ(Nat),
+}
+  \end{minted}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{使用 Nat 的函数}
+
+  \begin{minted}{rust}
+fn add(a: Nat, b: Nat) -> Nat {
+  match a {
+    Nat::Zero => b,
+    Nat::Succ(prev) => Nat::Succ(add(prev, b)),
+  }
+}
+  \end{minted}
+
+  \pause
+
+  递归 = 归纳定义
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{使用 Nat 的函数}
+  \begin{minted}{rust}
+fn add_zero(a: Nat)
+  -> (add(a, Nat::Zero) == a) {
+    match a {
+      Nat::Zero => refl(Nat, Nat::Zero),
+      Nat::Succ(prev) => ap(Nat::Succ, add_zero(prev)),
+    }
+  }
+  \end{minted}
+  \pause
+
+  递归 = 归纳证明
+\end{frame}
 
 \section{公理}
 
 \begin{frame}
   \frametitle{公理}
+
+  "存在一个类型是 ... 的项"
+
+  \pause
+
+  不一定会导致不可计算性。
 \end{frame}
 
 \begin{frame}
   \frametitle{排中律}
+
+  \begin{itemize}
+    \item \texttt{lem: (P + !P)}
+    \item \texttt{dne: !!P -> P}
+    \item \texttt{peirce: ((P -> Q) -> P) -> P}
+    \item \texttt{implies: (P -> Q) -> (Q + !P)}
+    \item \texttt{de\_morgan: !(!P × !Q) -> P + Q}
+  \end{itemize}
 \end{frame}
 
 \begin{frame}
   \frametitle{外延性}
+
+  $\{2x | x \in \mathbb{Z}\} =? \{2x + 2 | x \in \mathbb{Z}\}$
+  \pause
+
+  简单算法 =? 快速幂
+
+  \pause
+
+  \begin{itemize}
+    \item 命题外延性: \texttt{(P -> Q) × (Q -> P) -> P = Q}
+    \pause
+    \item 函数外延性: \texttt{(a -> f(a) == g(a)) -> f == g}
+    \pause
+    \item Univalence(类型外延性): $(A \simeq B) \simeq (A = B)$
+  \end{itemize}
+\end{frame}
+
+\section{碎碎念}
+
+\begin{frame}
+  \frametitle{What is \texttt{Type}}
+
+  \pause
+  \begin{itemize}
+    \item \texttt{Type: Type}
+
+    \pause
+    "The set of all sets"
+
+    \pause
+    非直谓性(Impredicativity) \& \texttt{Girard's paradox}
+
+    \item \texttt{Type} 是特殊的
+
+    "The \textbf{class} of all sets"
+
+    \pause
+    "\texttt{List<Type>}"
+
+    \pause
+    \item \texttt{Type 0} $\in$ \texttt{Type 1} $\in$ \texttt{Type 2} ...
+
+
+
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Axiom K \& HoTT}
+  \texttt{\_ ==(a ==(T) b) \_}
+
+  \pause
+
+  \begin{figure}
+    \includegraphics[width=0.5\textwidth]{assets/real.jpg}
+    \caption{HoTT}
+  \end{figure}
+  类型 = 拓扑空间，相等 = 路径，\texttt{ap} = 函数都是连续的。
+\end{frame}
+
+\begin{frame}
+  \frametitle{That's All!}
+  \begin{center}
+    \includegraphics[width=.5\textwidth]{assets/look.png}
+
+    Question time!
+  \end{center}
+  \url{https://github.com/CircuitCoder/MeowThink}
+  \url{https://github.com/CircuitCoder/LocalNeko}
 \end{frame}
 
 \end{document}
