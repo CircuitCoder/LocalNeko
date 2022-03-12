@@ -1,5 +1,5 @@
 \documentclass[UTF-8]{ctexbeamer}
-\usetheme{Berkeley}
+\usetheme{Copenhagen}
 \usecolortheme{seahorse}
 
 \usepackage{multimedia}
@@ -16,7 +16,7 @@
 
 \begin{document}
 
-\section{Intro}
+\part{Intro}
 
 \begin{frame}
   \titlepage
@@ -36,7 +36,13 @@
 
   \includegraphics[width=\textwidth]{assets/scary.jpg}
 
+  \pause
+
   \includegraphics[width=0.4\textwidth]{assets/gone.png}
+
+  \pause
+
+  \url{https://tuna.moe/event/2020/coq-proof/}
 \end{frame}
 
 \begin{frame}
@@ -71,7 +77,8 @@
 
 \end{frame}
 
-\section{命题逻辑}
+\part{命题逻辑}
+\frame{\partpage}
 
 \begin{frame}
   \frametitle{直觉逻辑 - Why}
@@ -356,7 +363,8 @@ fn lem_irrefutable<P>(
   循环可以用递归替代 - 不允许循环。
 \end{frame}
 
-\section{谓词逻辑}
+\part{谓词逻辑}
+\frame{\partpage}
 
 \begin{frame}
   \frametitle{一阶逻辑？}
@@ -590,7 +598,8 @@ fn C3_order_3(
 
 \end{frame}
 
-\section{归纳}
+\part{归纳}
+\frame{\partpage}
 
 \begin{frame}[fragile]
   \frametitle{归纳定义 / 证明}
@@ -646,7 +655,8 @@ fn add_zero(a: Nat)
   递归 = 归纳证明
 \end{frame}
 
-\section{公理}
+\part{公理}
+\frame{\partpage}
 
 \begin{frame}
   \frametitle{公理}
@@ -689,7 +699,8 @@ fn add_zero(a: Nat)
   \end{itemize}
 \end{frame}
 
-\section{碎碎念}
+\part{碎碎念}
+\frame{\partpage}
 
 \begin{frame}
   \frametitle{What is \texttt{Type}}
