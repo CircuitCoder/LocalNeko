@@ -1,0 +1,455 @@
+\documentclass[UTF-8]{ctexbeamer}
+\usetheme{Berkeley}
+
+\usepackage{multimedia}
+\usepackage{listings}
+\usepackage{minted}
+
+\title{(后)现代前端 CSS 技术}
+
+
+\author{喵喵}
+\date{2020.10}
+
+\begin{document}
+\begin{frame}
+  \titlepage
+  \begin{center}
+    \includegraphics[width=.1\textwidth]{assets/float.png}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{喵喵的(后)现代 CSS}
+
+  每个人的 CSS 写法都不一样
+  
+  \vspace{1em}
+  
+  喵喵喜欢的功能和实践会着重于以下几点特征：
+
+  \begin{itemize}
+    \item 实现的性能(60fps)
+    \item 代码可维护性
+    \item 最好存在 Fallback
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{What's in the box}
+  \begin{itemize}
+    \item CSS Basics
+    \item 一些新功能
+    \begin{itemize}
+      \item CSSOM/Houdini, WAAPI, etc.
+    \end{itemize}
+    \item 喵喵的 practice
+    \begin{itemize}
+      \item SASS, BEM, etc.
+    \end{itemize}
+  \end{itemize}
+
+  \pause
+
+  \vspace{2em}
+  例子：
+  \begin{itemize}
+    \item \url{https://meow.plus}
+    \item \url{https://gust.construction}
+  \end{itemize}
+\end{frame}
+
+\section{CSS Transition}
+\begin{frame}[fragile]
+  \frametitle{CSS Optimization Basics}
+  \begin{minted}{css}
+    .jiege + .meow {
+      opacity: 0;
+      transition: opacity .2s ease;
+    }
+  \end{minted}
+  \pause
+  $$\Downarrow$$
+  \begin{minted}{html}
+    <main>
+      <h1 class="jiege">God himself</h1>
+      <small class="meow">Meow</small>
+    </main>
+  \end{minted}
+\end{frame}
+
+\begin{frame}
+  \frametitle{CSS Optimization Basics (Cont.)\footnote{\url{https://developers.google.com/web/fundamentals/performance/rendering}}}
+
+  \begin{itemize}
+    \item 找到 CSS 属性发生变化的元素: \texttt{main > small.meow}
+    \pause
+    \item 计算 Diff，并且观察是不是有 Transition / Animation
+    \pause
+    \item 本次重绘 Tick（如果是持续变化，那么在接下来的每一个 Tick）:
+    \pause
+    \begin{itemize}
+      \item 计算 Style set
+      \item Layout: 重新计算元素的尺寸
+      \item Paint: 重新绘制元素
+      \item Composite: 将新绘制的元素叠加到图层上
+    \end{itemize}
+  \end{itemize}
+
+  \pause
+  \vspace{2em}
+
+  Layout 和 Paint 可以在不必须的情况下被省去（e.g. \texttt{opacity} 的变化）
+
+  \pause
+  \vspace{1em}
+
+  在大量使用 Transition 的场景下，Layout 是非常慢的。Paint 会消耗更多的 GPU 带宽，相比 Composite 也更慢，最好也省去。
+\end{frame}
+
+\begin{frame}
+  \frametitle{选定过渡属性}
+
+  稍稍过时的数据： \url{https://csstriggers.com/}
+
+  \vspace{2em}
+
+  \begin{itemize}
+    \item \texttt{transform}
+    \item \texttt{opacity}
+    \item \texttt{filter}\footnote{\url{https://www.chromium.org/developers/design-documents/image-filters}}
+    \item \texttt{clip-path}\footnote{\url{https://groups.google.com/a/chromium.org/g/paint-dev/c/3bXUo0X3C5I}}
+    \item \texttt{backdrop-filter}??
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{产生了一些问题...}
+
+  目标效果：一个容器的宽度连续变化。
+
+  \vspace{2em}
+  \pause
+
+  \begin{itemize}
+    \item 可以用 \texttt{width}，但是会很慢。
+    \pause
+    \item \texttt{scale}? 最开始会有一次突变
+    \pause
+    \item 在父亲元素上用 \texttt{clip-path}，在孩子元素上用 \texttt{translate}
+  \end{itemize}
+
+  \pause
+  \vspace{2em}
+  怎么让“宽度”这个变量变化？
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{产生了一些问题... (Cont.)}
+
+  朴素的方案：可以每个用到的地方分别写一个 class
+
+  \begin{minted}{css}
+    .parent { transition: clip-path .2s ease; }
+    .left-child { transition: transform .2s ease; }
+
+    .parent.shrink {
+      clip-path: polygon(
+        50vw 0, 50vw 100vh, 100vw 100vh, 100vw 0);
+    }
+    .parent.shrink .left-child {
+      transform: translateX(50vw);
+    }
+  \end{minted}
+
+  \pause
+
+  \vspace{2em}
+  如果共享的状态涉及大量元素呢，或者有大量不同的状态呢？
+  
+  e.g. 暗色模式，多种不同的宽度，etc...
+\end{frame}
+
+\section{Custom Property}
+\begin{frame}[fragile]
+  \frametitle{CSS Variable / Custom Property}
+
+  \begin{minted}{css}
+    .parent {
+      --slice: 0vw;
+      clip-path: polygon(
+        var(--slice) 0, var(--slice) 100vh, 
+        100vw 100vh, 100vw 0,
+      );
+      transition: clip-path .2s ease;
+    }
+    .parent.shirnk { --slice: 50vw; }
+    .left-child {
+      transition: transform .2s ease;
+      transform: translateX(var(--slice));
+    }
+  \end{minted}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{CSS Variable / Custom Property (Cont.)}
+  \texttt{--var-name: "Anything here"}
+
+  \begin{itemize}
+    \item 可以继承
+    \item \textbf{无类型}
+    \item 未设置时无初始值，因此在使用的时候相当于非法属性值。
+  \end{itemize}
+
+  \pause
+  \vspace{2em}
+  \begin{minted}{css}
+    transition: display 10s ease;
+  \end{minted}
+  \pause
+  \begin{minted}{css}
+    transition: --var-name 10s ease;
+  \end{minted}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Houdini: @property}
+  \begin{minted}{css}
+
+    @property --shift-width {
+      syntax: '<length>';
+      inherits: true;
+      initial-value: 0;
+    }
+
+  \end{minted}
+
+  \pause
+  \vspace{1em}
+
+  \texttt{--shift-width} 现在是有类型的了，因此以下过渡可以正常工作：
+
+  \vspace{1em}
+
+  \begin{minted}{css}
+    transition: --shift-width .2s ease;
+  \end{minted}
+
+  \pause
+  \vspace{1em}
+
+  同时能保证在同一 tick，所有用到这个变量的 Transition 都是同步的。
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Houdini: @property (Cont.)}
+
+  能不能再给力一些？
+
+  \pause
+  \vspace{2em}
+
+  \begin{minted}{css}
+    .foobar {
+      transition:
+        --first-stage .2s 0s ease,
+        --second-stage .2s .1s ease;
+
+      transform: translateX(calc(
+        var(--first-stage) + var(--second-stage)
+      ));
+    }
+  \end{minted}
+\end{frame}
+
+\section{JS Interop}
+
+\begin{frame}[fragile]
+  \frametitle{WAAPI}
+
+  \begin{block}{Web Animation API}
+    [WAAPI] defines a model and an API for interacting with it, for synchronization and timing of changes to the presentation of a Web page.\footnote{\url{https://drafts.csswg.org/web-animations-1/}}
+  \end{block}
+
+  \pause
+
+  \begin{minted}{javascript}
+    const animation = el.animate(
+      [{ transform: 'translateY(0)' }],
+      [{ transform: 'translateY(100px)' }],
+      {
+        duration: 1000, delay: 1000,
+        easing: 'ease', fill: 'both'
+      },
+    );
+    await animation.finished;
+  \end{minted}
+\end{frame}
+
+\begin{frame}
+  \frametitle{WAAPI (Cont.)}
+
+  \begin{itemize}
+    \item 减少 CSS 的 parsing 时间
+    \item 方便浏览器优化
+    \pause
+    \item 可以并行生成多个不同属性的 Transition
+    \pause
+    \item \textbf{可以和 Houdini 一起用！}
+    \pause
+    \begin{itemize}
+      \item 可以并行生成多个相同属性的 Transition
+    \end{itemize}
+  \end{itemize}
+  
+  \pause
+  \vspace{2em}
+
+  非常适合用来写：FLIP，进入/离开过渡
+\end{frame}
+
+\begin{frame}
+  \frametitle{ResizeObserver \& IntersectionObserver}
+  \includegraphics[width=\textwidth]{assets/OBSERVE.jpg}
+\end{frame}
+
+\begin{frame}
+  \frametitle{ResizeObserver \& IntersectionObserver}
+
+  检测元素的尺寸、相对于一个父元素的位移变化
+  
+  \vspace{2em}
+
+  \begin{itemize}
+    \pause
+    \item 和 Canvas 配合使用
+    \pause
+    \item 和 \texttt{position: sticky} 配合使用
+    \item ...
+  \end{itemize}
+
+  \vspace{2em}
+  \pause
+
+  相比于 \texttt{resize} 和 \texttt{scroll} 事件，减少 polling。
+
+  \vspace{2em}
+  \pause
+
+  BTW: \texttt{MutationObserver}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Also worth reading:}
+  \begin{itemize}
+    \item CSSOM
+    \begin{itemize}
+      \item 可以提供 Houdini 的一个 Fallback
+      \item 可以在不强制 Repaint 的情况下从 CSS 得到部分属性
+      \item CSS Paint API\footnote{\url{https://developer.mozilla.org/en-US/docs/Web/API/CSS_Painting_API/Guide}}
+    \end{itemize}
+    \item Grid Layout
+  \end{itemize}
+\end{frame}
+
+\section{喵喵's practice}
+\begin{frame}
+  \frametitle{喵喵's practice}
+
+  喵喵喜欢的写 CSS 的方式：
+  \begin{itemize}
+    \item BEM 命名方式（喵喵裁剪版）
+    \item SCSS
+    \item 使用 \texttt{@import}
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{BEM}
+  \begin{block}{Block, Element, Modifier}
+    \begin{minted}{css}
+      .button--primary__text--hint { }
+      /* .button.primary .text.hint */
+    \end{minted}
+  \end{block}
+
+  \vspace{2em}
+  \pause
+  \includegraphics[width=\textwidth]{assets/frame-full.jpg}
+
+  减少检查 Selector 的时间：不需要检查父子、兄弟关系。
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{BEM (Cont.)}
+  例外：需要使用 Pseudo-element 的时候。
+
+  \begin{minted}{css}
+  .container:hover .title { opacity: 1; }
+  .paragraph::first-leter { font-weight: 900; }
+  .timestamp:before { content: "TIMESTAMP >"; }
+  \end{minted}
+
+  \vspace{2em}
+  \pause
+
+  减少 JS 的使用，“样式就写在样式表里，和 JS 无关”
+
+  而且还快。
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{SCSS}
+
+  \begin{itemize}
+    \item 和 BEM 相性很好
+    \item 有好多内置的函数（生成色板，etc.）
+    \item @for
+  \end{itemize}
+
+  \vspace{1em}
+  \pause
+
+  \begin{minted}{scss}
+    @mixin with-title($active) {
+      &__title {
+        font-size: 1.4em;
+        &--#{$active} {
+          font-size: 1.8em;
+        }
+      }
+    }
+    .post { @include with-title("foo"); }
+    .list { @include with-title("bar"); }
+  \end{minted}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Alternatives}
+
+  \begin{itemize}
+    \item CSS-in-JS
+    \item styled-components
+  \end{itemize}
+
+  \vspace{2em}
+  \pause
+
+  喵喵不用的原因：
+  
+  样式变化的时候可能需要 parse 注入的 CSS，编辑器支持比较差，浏览器难以优化，难以调试，etc.
+\end{frame}
+
+\begin{frame}
+  \frametitle{That's All!}
+
+  \begin{center}
+    \includegraphics[width=.5\textwidth]{assets/look.png}
+
+    Question time!
+  \end{center}
+
+  \url{https://meow.c-3.moe/sth-about-jielabs}
+
+  \url{https://meow.c-3.moe/writing-meow-plus}
+\end{frame}
+\end{document}
