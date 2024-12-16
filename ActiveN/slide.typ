@@ -32,7 +32,27 @@
 ]
 
 #slide[
+  == Background: Neuromorphic Computing
+
+  #v(-1em)
+
+  Neuromorphic computing formulate computation tasks using biological-realistic neural networks.
+
+  #only("1")[
+    #image("SNN-simple.png", width: 40%)
+  ]
+
+  #only("2-")[
+    Finite-difference time-domain + Neuron/synapse models $=>$ *Spiking neural networks (SNNs)*
+
+    #image("SNN.png", width: 80%)
+  ]
+]
+
+#slide[
   == Overview & Motivation
+
+  #v(-1em)
 
   Energy efficiency of neuromorphic computing comes from its event-driven nature.
   #pause
@@ -40,32 +60,36 @@
 
   #pause
 
-  Trend 1: We're having more diverse neuron models (update model, postsynaptic accumulation model).
+  *Trend 1*: We're having more diverse neuron models (update model, postsynaptic accumulation model).
 
   - LIF and its variants, Izhikevich, HH, Biexponential
 
   #pause
 
-  Conflict: Contemporary general-purpose processor architectures cannot efficiently deals with this sparsity.
+  *Conflict*: Contemporary general-purpose processor architectures cannot efficiently deals with this sparsity.
 ]
 
 #slide[
   == Overview & Motivation
 
+  #v(-1em)
+
   Energy efficiency of neuromorphic computing comes from its event-driven nature.
   - $=>$ Sparsity in both spatial and temporal domain
 
-  Trend 2: We're having larger models.
+  *Trend 2*: We're having larger models.
 
   - Schmidt et al(2018): 4.13M neurons, 24.2B synapses
 
   #pause
 
-  Conflict: High density storages (e.g. DRAMs) also cannot efficiently deals with sparsity.
+  *Conflict*: High density storages (e.g. DRAMs) also cannot efficiently deals with sparsity.
 ]
 
 #slide[
   == Overview & Motivation
+
+  #v(-1em)
 
   Energy efficiency of neuromorphic computing comes from its event-driven nature.
   - $=>$ Sparsity in both spatial and temporal domain
@@ -120,6 +144,8 @@
 #slide[
   == Active messaging
 
+  #v(-1em)
+
   PUs can send messages to PUs. Incoming events would trigger event handlers, which is scheduled according to priorities by the hardware.
 
   #image("active-msg.png")
@@ -137,6 +163,8 @@
 #slide[
   == Access latencies for global memory (synapse matrix)
 
+  #v(-1em)
+
   Simple optimization: put CSR row pointers into scratchpad: saves one roundtrip.
 
   #pause
@@ -146,6 +174,8 @@
 
 #slide[
   == "Context-free" memory accesses
+
+  #v(-1em)
 
   Access to synapse connection matrix is "Context-free"
 
@@ -160,6 +190,8 @@
 
 #slide[
   == "Context-free" memory accesses
+
+  #v(-1em)
 
   Access to synapse connection matrix is "Context-free"
 
@@ -179,6 +211,8 @@
 #slide[
   == Asynchronous memory access through Active Messaging
 
+  #v(-1em)
+
   PUs can send messages indicative of a load / store to memory controller.
 
   #only("1")[#image("async-mem.png")]
@@ -197,6 +231,8 @@
 #slide[
   == CSR-aware memory controller
 
+  #v(-1em)
+
   Only for "context-free" synapse matrix loads: memory controller directly forwards the data to postsynaptic PU.
 
   #image("mem-fwd.png")
@@ -204,6 +240,8 @@
 
 #slide[
   == Implementation / Core and active messaging
+
+  #v(-1em)
   Based on a in-order 3-stage RISC-V core.
 
   #image("core.png", width: 20em);
@@ -211,7 +249,7 @@
 
 #slide[
   == Implementation / Core and active messaging
-  #v(-2em)
+  #v(-1em)
   #image("core.png", width: 16em);
   - Base ISA RV32IF, 32-bit XLEN
   - Arguments are directly written into register file.
@@ -310,5 +348,6 @@
 
   #block[#align(left)[
   - GitHub: #text(font: "Source Code Pro")[CRAFT-THU/ActiveN]
+  - In proceeding: MICRO'24
   ]]
 ]
