@@ -1,4 +1,5 @@
 #import "@preview/polylux:0.3.1": *
+#import "@preview/cetz:0.3.1"
 
 #import themes.simple: *
 
@@ -35,6 +36,7 @@
 ]
 #slide[
   == Pre-Background...
+  #v(-1em)
 
   Properties, repersented by *propositions and predicates*, are syntatical objects.
 
@@ -59,13 +61,15 @@
 #slide[
   == Background
 
+  #v(-1em)
+
   A lot of desirable properties are *global*:
   - When *all nodes* works, no incorrect routes are advertised.
   - When *all edges* works, *all nodes* acknowledge correct routes.
 
   #pause
 
-  Verifying global properties *globally* is HARD.
+  Checking global properties *globally* is HARD.
   - Symbolically: Amount of states grows exponentially, amount of checks grows (at least) quadratically.
   - Runtime: Synchronization is costly / hard to do right.
 ]
@@ -87,7 +91,42 @@
 
   Generates:
   - Local checks
-  - Proof that local constraints imply global properties
+
+  Paper proves that local constraints imply global properties
+]
+
+#slide[
+  == Scope of #ly
+
+  #v(-1em)
+
+  Internal WAN (with BGP support).
+
+  #pause
+
+  *Cloud provider*: Vultr, Azure, ...
+
+  #cetz.canvas({
+    import cetz.draw: *
+    rect((0, 0), (6, 2), name: "c1")
+    content("c1", [Customer 2])
+    rect((0, 3), (6, 5), name: "c2")
+    content("c2", [Customer 1])
+
+    rect((8, 3), (14, 5), name: "i", stroke: (thickness: 4pt))
+    content("i", [WAN])
+
+    line("c1.east", "i.west")
+    line("c2.east", "i.west")
+
+    rect((16, 0), (22, 2), name: "s1")
+    content("s1", [ISP 2])
+    rect((16, 3), (22, 5), name: "s2")
+    content("s2", [ISP 1])
+
+    line("s1.west", "i.east")
+    line("s2.west", "i.east")
+  })
 ]
 
 #slide[
@@ -99,7 +138,7 @@
 
   #pause
 
-  E.g.  At node $N$:
+  E.g.  At inner node $N$:
   $
     "addr"(r) in "dead:beef::/64"
   $
@@ -107,7 +146,8 @@
   #pause
 
   Generated functions: `Import, Export, Originates`
-  - `Import: ` `Edge` $times$ `Route` $->$ `Route` $union {$ `Reject` $}$ 
+  - `Import, Export: ` `Edge` $times$ `Route` $->$ `Route` $union {$ `Reject` $}$ 
+  - `Originates: ` `Edge` $->$ $PP$(`Route`)
 ]
 
 #slide[
@@ -133,6 +173,7 @@
   ])
 ]
 
+/*
 #slide[
   == An example...
 
@@ -152,9 +193,10 @@
     $"FromISP1"(r) \ -> 100:1 in "Comm"(r)$
   ])
 ]
+*/
 
 #slide[
-  == Scope of #ly
+  == Limits of #ly
 
   #v(-1.5em)
 
@@ -184,10 +226,10 @@
 
   #pause
 
-  For all edge $A -> B$, generates:
+  For all location $l$, generates:
 
   $
-    (and.big "inv(A)"  union "inv"(A -> B) union "inv"(B)) and r' = "Import"(A->B, r) \ -> "inv"(A -> B)[r slash r']
+    (and.big "inv"(l)) and (r' = "Import"(l, r)) -> "inv"(l)[r slash r']
   $ 
 ]
 
@@ -214,7 +256,6 @@
   - Implemented in C\# which can be directly integrated into existing systems.
 ]
 
-/*
 #title-slide[
   == Thank you!
 
@@ -222,4 +263,3 @@
 
   #image("./look.png", width: 120pt)
 ]
-*/
